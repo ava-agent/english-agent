@@ -19,6 +19,10 @@ export default async function SettingsPage() {
             travel_weight: 0.5,
             notification_hour: 9,
             timezone: "Asia/Shanghai",
+            telegram_chat_id: null,
+            telegram_enabled: false,
+            serverchan_sendkey: null,
+            serverchan_enabled: false,
           }
         }
         githubConfig={githubConfig}

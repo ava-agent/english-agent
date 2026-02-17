@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { buildSessionPlan } from "@/lib/session-builder";
+import { sendNotificationToUser } from "@/lib/notifications";
+import { buildSessionCompletePayload } from "@/lib/notifications/messages";
 import type { SessionPlan } from "@/types/database";
 
 export interface SessionData {
@@ -272,6 +274,17 @@ export async function completeSession(
       onConflict: "user_id,checkin_date",
     }
   );
+
+  // Fire-and-forget: send completion notification
+  sendNotificationToUser(
+    user.id,
+    buildSessionCompletePayload({
+      newWords: finalStats.new_words_learned,
+      reviewed: finalStats.words_reviewed,
+      durationSeconds: finalStats.duration_seconds,
+      streak: streakCount,
+    })
+  ).catch((err) => console.error("Session notification failed:", err));
 
   return { success: true };
 }

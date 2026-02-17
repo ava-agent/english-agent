@@ -8,6 +8,10 @@ export interface UserSettings {
   travel_weight: number;
   notification_hour: number;
   timezone: string;
+  telegram_chat_id: string | null;
+  telegram_enabled: boolean;
+  serverchan_sendkey: string | null;
+  serverchan_enabled: boolean;
 }
 
 export async function getSettings(): Promise<UserSettings | null> {
@@ -19,7 +23,7 @@ export async function getSettings(): Promise<UserSettings | null> {
 
   const { data } = await supabase
     .from("profiles")
-    .select("daily_new_words, session_length_minutes, travel_weight, notification_hour, timezone")
+    .select("daily_new_words, session_length_minutes, travel_weight, notification_hour, timezone, telegram_chat_id, telegram_enabled, serverchan_sendkey, serverchan_enabled")
     .eq("id", user.id)
     .single();
 

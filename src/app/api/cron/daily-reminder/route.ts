@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { sendPushNotification } from "@/lib/push";
+import { sendNotificationToUser } from "@/lib/notifications";
+import { buildDailyReminderPayload } from "@/lib/notifications/messages";
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -14,28 +14,38 @@ export async function GET(request: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  // Get all push subscriptions
-  const { data: subscriptions } = await supabase
-    .from("push_subscriptions")
-    .select("subscription");
+  const { data: profiles } = await supabase.from("profiles").select("id");
 
-  if (!subscriptions || subscriptions.length === 0) {
-    return NextResponse.json({ message: "No subscriptions" });
+  if (!profiles || profiles.length === 0) {
+    return NextResponse.json({ message: "No users" });
   }
 
-  let sent = 0;
-  for (const sub of subscriptions) {
+  const results = [];
+
+  for (const profile of profiles) {
     try {
-      await sendPushNotification(sub.subscription, {
-        title: "English Learning Time!",
-        body: "每日英语学习时间到了，来学习新单词吧！",
-        url: "/learn",
+      const { data: streakData } = await supabase.rpc("get_current_streak", {
+        p_user_id: profile.id,
       });
-      sent++;
+
+      const { count: dueCount } = await supabase
+        .from("user_cards")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", profile.id)
+        .lte("due", new Date().toISOString());
+
+      const payload = buildDailyReminderPayload({
+        streak: streakData ?? 0,
+        dueCount: dueCount ?? 0,
+      });
+
+      const channelResults = await sendNotificationToUser(profile.id, payload);
+      results.push({ userId: profile.id, channels: channelResults });
     } catch (error) {
-      console.error("Failed to send push:", error);
+      console.error(`Failed to notify user ${profile.id}:`, error);
+      results.push({ userId: profile.id, error: String(error) });
     }
   }
 
-  return NextResponse.json({ sent });
+  return NextResponse.json({ results });
 }
