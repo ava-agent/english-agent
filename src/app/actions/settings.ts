@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { updateSettingsSchema } from "@/lib/validation";
 
 export interface UserSettings {
   daily_new_words: number;
@@ -39,10 +40,15 @@ export async function updateSettings(
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
+  const parsed = updateSettingsSchema.safeParse(settings);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? "Invalid settings" };
+  }
+
   const { error } = await supabase
     .from("profiles")
     .update({
-      ...settings,
+      ...parsed.data,
       updated_at: new Date().toISOString(),
     })
     .eq("id", user.id);

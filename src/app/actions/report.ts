@@ -1,5 +1,6 @@
 "use server";
 
+import { createClient } from "@/lib/supabase/server";
 import { gatherReportData, generateReportMarkdown } from "@/lib/report-generator";
 import { commitDailyReport } from "@/lib/github";
 
@@ -29,10 +30,14 @@ export async function publishDailyReport(date?: string): Promise<{
     return { success: false, error: "GitHub 未配置。请在 Vercel 环境变量中设置 GITHUB_TOKEN、GITHUB_REPO_OWNER 和 GITHUB_REPO_NAME。" };
   }
 
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "未登录" };
+
   const targetDate = date ?? new Date().toISOString().slice(0, 10);
 
   try {
-    const reportData = await gatherReportData(targetDate);
+    const reportData = await gatherReportData(targetDate, user.id);
     if (!reportData) {
       return { success: false, error: `${targetDate} 没有学习记录，无法生成报告。` };
     }

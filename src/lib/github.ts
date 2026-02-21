@@ -26,8 +26,8 @@ export async function commitDailyReport(date: string, content: string) {
     content: Buffer.from(content).toString("base64"),
     sha: existingSha,
     committer: {
-      name: "English Learning Bot",
-      email: "bot@english-learning.app",
+      name: process.env.GITHUB_COMMITTER_NAME ?? "English Learning Bot",
+      email: process.env.GITHUB_COMMITTER_EMAIL ?? "bot@english-learning.app",
     },
   });
 }

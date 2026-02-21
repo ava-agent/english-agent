@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { sendTelegramMessage } from "@/lib/notifications/telegram";
 import { sendServerChanMessage } from "@/lib/notifications/serverchan";
+import { testNotificationSchema } from "@/lib/validation";
 
 export async function sendTestNotification(
   channel: "telegram" | "serverchan",
@@ -13,6 +14,11 @@ export async function sendTestNotification(
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "未登录" };
+
+  const parsed = testNotificationSchema.safeParse({ channel, config });
+  if (!parsed.success) {
+    return { success: false, error: "输入参数无效" };
+  }
 
   const title = "测试通知";
   const body = "这是一条测试通知，如果您收到了，说明配置成功！";

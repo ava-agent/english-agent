@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SessionContainer } from "@/components/session/session-container";
 import {
@@ -59,14 +60,26 @@ export function LearnPageClient({ initialSession }: LearnPageClientProps) {
         今日 Session 将包含复习卡片、新词学习和练习
       </p>
       {error && (
-        <p className="text-sm text-destructive">{error}</p>
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-sm text-destructive">{error}</p>
+          <Button variant="outline" size="sm" onClick={handleStartSession} disabled={loading}>
+            重试
+          </Button>
+        </div>
       )}
       <Button
         onClick={handleStartSession}
         disabled={loading}
         className="h-12 px-8 text-base"
       >
-        {loading ? "正在生成..." : "开始今日学习"}
+        {loading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            正在生成...
+          </>
+        ) : (
+          "开始今日学习"
+        )}
       </Button>
     </div>
   );

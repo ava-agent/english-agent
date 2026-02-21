@@ -10,7 +10,7 @@ export function initWebPush() {
   }
 
   webpush.setVapidDetails(
-    "mailto:english-learning@example.com",
+    process.env.VAPID_CONTACT_EMAIL ?? "mailto:english-learning@example.com",
     publicKey,
     privateKey
   );

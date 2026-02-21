@@ -2,6 +2,12 @@ import OpenAI from "openai";
 import { z } from "zod";
 
 // GLM-4 via OpenAI-compatible API
+const LLM_MODEL = process.env.LLM_MODEL ?? "glm-4-plus";
+
+if (!process.env.ZHIPU_API_KEY) {
+  console.warn("ZHIPU_API_KEY is not set. LLM features will not work.");
+}
+
 const client = new OpenAI({
   apiKey: process.env.ZHIPU_API_KEY ?? "",
   baseURL: process.env.ZHIPU_BASE_URL ?? "https://open.bigmodel.cn/api/paas/v4",
@@ -135,7 +141,7 @@ Respond ONLY with valid JSON matching this structure:
 
   try {
     const response = await client.chat.completions.create({
-      model: "glm-4-plus",
+      model: LLM_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.8,
       response_format: { type: "json_object" },
@@ -198,7 +204,7 @@ Respond ONLY with valid JSON:
 
   try {
     const response = await client.chat.completions.create({
-      model: "glm-4-plus",
+      model: LLM_MODEL,
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
       response_format: { type: "json_object" },

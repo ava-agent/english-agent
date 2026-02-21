@@ -18,17 +18,11 @@ interface ReportData {
   reviewedWords: { word: string; rating: number; next_review: string }[];
 }
 
-export async function gatherReportData(date: string): Promise<ReportData | null> {
+export async function gatherReportData(date: string, userId: string): Promise<ReportData | null> {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
-
-  // Get all users (single user app, but iterate just in case)
-  const { data: profiles } = await supabase.from("profiles").select("id");
-  if (!profiles || profiles.length === 0) return null;
-
-  const userId = profiles[0].id;
 
   // Get today's session
   const { data: session } = await supabase
