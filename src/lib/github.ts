@@ -14,8 +14,11 @@ export async function commitDailyReport(date: string, content: string) {
     if (!Array.isArray(data) && data.type === "file") {
       existingSha = data.sha;
     }
-  } catch {
-    // File doesn't exist yet
+  } catch (err: unknown) {
+    // Only ignore 404 (file doesn't exist), re-throw other errors
+    if (err && typeof err === "object" && "status" in err && err.status !== 404) {
+      throw err;
+    }
   }
 
   await octokit.repos.createOrUpdateFileContents({

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { LearnCard } from "./learn-card";
 import { ReviewCard } from "./review-card";
 import { PracticeCard } from "./practice-card";
@@ -40,7 +40,7 @@ export function SessionContainer({ session }: SessionContainerProps) {
   const cardTimer = useTimer();
 
   const plan = session.plan;
-  const items = plan.items ?? [];
+  const items = useMemo(() => plan.items ?? [], [plan.items]);
 
   // Prefetch all vocabulary data
   useEffect(() => {
@@ -156,7 +156,7 @@ export function SessionContainer({ session }: SessionContainerProps) {
 
   // Handle practice completion
   const handlePracticeComplete = useCallback(
-    async (_correct: boolean) => {
+    async (_: boolean) => {
       await advanceToNext(false, false);
     },
     [advanceToNext]
@@ -209,7 +209,10 @@ export function SessionContainer({ session }: SessionContainerProps) {
         <ReviewCard
           key={currentIndex}
           vocabulary={vocabulary}
-          masteryLevel={getMasteryLevel(2, 0)}
+          masteryLevel={getMasteryLevel(
+            currentItem.card_state ?? 2,
+            currentItem.card_stability ?? 0
+          )}
           onRate={handleReviewRate}
         />
       )}

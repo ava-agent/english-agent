@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -13,16 +13,13 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  useEffect(() => {
-    if (searchParams.get("error") === "confirmation_failed") {
-      setError("邮箱确认链接无效或已过期，请重新注册。");
-    }
-  }, [searchParams]);
+  const confirmationFailed = searchParams.get("error") === "confirmation_failed";
+  const [error, setError] = useState<string | null>(
+    confirmationFailed ? "邮箱确认链接无效或已过期，请重新注册。" : null
+  );
+  const [message, setMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

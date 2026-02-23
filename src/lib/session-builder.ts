@@ -59,7 +59,7 @@ async function selectNewVocabulary(
       .limit(travelCount);
 
     if (knownIds.length > 0) {
-      query = query.not("id", "in", `(${knownIds.join(",")})`);
+      query = query.not("id", "in", `(${knownIds.map((id) => `"${id}"`).join(",")})`);
     }
 
     const { data } = await query;
@@ -76,7 +76,7 @@ async function selectNewVocabulary(
       .limit(softwareCount);
 
     if (knownIds.length > 0) {
-      query = query.not("id", "in", `(${knownIds.join(",")})`);
+      query = query.not("id", "in", `(${knownIds.map((id) => `"${id}"`).join(",")})`);
     }
 
     const { data } = await query;
@@ -166,6 +166,8 @@ export async function buildSessionPlan(
     type: "review" as const,
     vocabulary_id: card.vocabulary_id,
     card_id: card.id,
+    card_state: card.state,
+    card_stability: card.stability,
   }));
 
   const learnPlanItems: SessionPlanItem[] = newVocabulary.map((vocab) => ({

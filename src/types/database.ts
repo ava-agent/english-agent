@@ -30,6 +30,8 @@ export interface SessionPlanItem {
   type: "review" | "learn" | "practice";
   vocabulary_id?: string;
   card_id?: string;
+  card_state?: number;
+  card_stability?: number;
   practice_data?: PracticeData;
 }
 

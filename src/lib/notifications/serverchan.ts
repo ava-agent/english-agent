@@ -15,5 +15,14 @@ export async function sendServerChanMessage(
     return { success: false, error: `ServerChan API error: ${res.status} ${body}` };
   }
 
+  try {
+    const body = await res.json();
+    if (body.code !== 0 && body.errno !== 0) {
+      return { success: false, error: body.errmsg ?? body.message ?? "ServerChan unknown error" };
+    }
+  } catch {
+    // Response is not JSON, treat as success if HTTP status was ok
+  }
+
   return { success: true };
 }

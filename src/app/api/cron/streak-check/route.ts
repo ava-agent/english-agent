@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 export async function GET(request: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -35,6 +36,10 @@ export async function GET(request: NextRequest) {
       .single();
 
     if (!checkin && profile.streak_freeze_remaining > 0) {
+      // Get current streak before freezing
+      const { data: currentStreak } = await supabase
+        .rpc("get_current_streak", { p_user_id: profile.id });
+
       // Use streak freeze - create a placeholder check-in
       await supabase.from("daily_checkins").insert({
         user_id: profile.id,
@@ -42,7 +47,7 @@ export async function GET(request: NextRequest) {
         words_learned: 0,
         words_reviewed: 0,
         duration_seconds: 0,
-        streak_count: 0,
+        streak_count: (currentStreak ?? 0) + 1,
         used_freeze: true,
       });
 
