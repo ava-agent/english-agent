@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/learn", label: "学习", icon: BookIcon },
-  { href: "/review", label: "复习", icon: RepeatIcon },
+  { href: "/chat", label: "聊天", icon: ChatIcon },
   { href: "/dashboard", label: "面板", icon: ChartIcon },
   { href: "/vocabulary", label: "词汇", icon: ListIcon },
   { href: "/settings", label: "设置", icon: SettingsIcon },
@@ -59,26 +59,6 @@ function BookIcon({ className }: { className?: string }) {
   );
 }
 
-function RepeatIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="m17 2 4 4-4 4" />
-      <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
-      <path d="m7 22-4-4 4-4" />
-      <path d="M21 13v1a4 4 0 0 1-4 4H3" />
-    </svg>
-  );
-}
-
 function ChartIcon({ className }: { className?: string }) {
   return (
     <svg
@@ -113,6 +93,23 @@ function ListIcon({ className }: { className?: string }) {
       <rect width="7" height="7" x="14" y="3" rx="1" />
       <rect width="7" height="7" x="14" y="14" rx="1" />
       <rect width="7" height="7" x="3" y="14" rx="1" />
+    </svg>
+  );
+}
+
+function ChatIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
     </svg>
   );
 }

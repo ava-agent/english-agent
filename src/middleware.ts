@@ -36,6 +36,7 @@ export async function middleware(request: NextRequest) {
   // Protected routes - redirect to login if not authenticated
   const isProtectedRoute =
     request.nextUrl.pathname.startsWith("/learn") ||
+    request.nextUrl.pathname.startsWith("/chat") ||
     request.nextUrl.pathname.startsWith("/dashboard") ||
     request.nextUrl.pathname.startsWith("/vocabulary") ||
     request.nextUrl.pathname.startsWith("/review") ||

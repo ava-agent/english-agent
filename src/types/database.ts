@@ -44,6 +44,55 @@ export interface PracticeData {
   word: string;
 }
 
+// ============================================
+// Chat Types
+// ============================================
+
+export interface ChatCharacter {
+  id: string;
+  name: string;
+  avatar: string;
+  personality: string;
+  speaking_style: string;
+  background: string;
+}
+
+export interface VocabularyHighlight {
+  word: string;
+  definition: string;
+  definition_zh: string;
+  pronunciation?: string;
+}
+
+export interface ChatMessageMetadata {
+  vocabulary_highlights?: VocabularyHighlight[];
+  correction?: { original: string; corrected: string; explanation: string };
+}
+
+export interface ChatConversation {
+  id: string;
+  user_id: string;
+  character_id: string;
+  destination: string;
+  scenario: string;
+  status: "active" | "completed";
+  vocabulary_learned: VocabularyHighlight[];
+  message_count: number;
+  duration_seconds: number;
+  created_at: string;
+  completed_at: string | null;
+}
+
+export interface ChatMessage {
+  id: string;
+  conversation_id: string;
+  user_id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  metadata: ChatMessageMetadata;
+  created_at: string;
+}
+
 export interface Database {
   public: {
     Tables: {
