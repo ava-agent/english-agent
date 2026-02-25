@@ -22,7 +22,7 @@ export function ChatBubble({ role, content, avatar, isStreaming }: ChatBubblePro
       )}
       <div
         className={cn(
-          "max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+          "max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
           isUser
             ? "bg-primary text-primary-foreground"
             : "bg-muted",

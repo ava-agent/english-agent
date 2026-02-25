@@ -217,6 +217,26 @@ export function ChatView({ conversation, initialMessages }: ChatViewProps) {
         </div>
       </div>
 
+      {/* Quick Replies */}
+      {!isStreaming && messages.length > 0 && (
+        <div className="border-t bg-background/80 px-4 py-2">
+          <div className="mx-auto flex max-w-lg gap-2 overflow-x-auto">
+            {getQuickReplies(scenario?.id).map((reply) => (
+              <button
+                key={reply}
+                onClick={() => {
+                  setInput(reply);
+                  inputRef.current?.focus();
+                }}
+                className="shrink-0 rounded-full border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+              >
+                {reply}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Input */}
       <div className="border-t bg-background px-4 py-3">
         <div className="mx-auto flex max-w-lg items-center gap-2">
@@ -242,4 +262,19 @@ export function ChatView({ conversation, initialMessages }: ChatViewProps) {
       </div>
     </div>
   );
+}
+
+// Quick reply suggestions based on scenario
+function getQuickReplies(scenarioId?: string): string[] {
+  const common = ["Could you repeat that?", "What does that mean?", "Tell me more!"];
+  const scenarioReplies: Record<string, string[]> = {
+    airport: ["Where is the gate?", "How long is the layover?", "Can I check this bag?"],
+    hotel: ["Is breakfast included?", "Can I get a late checkout?", "Where's the elevator?"],
+    restaurant: ["What do you recommend?", "Can I see the menu?", "Is this spicy?"],
+    shopping: ["How much is this?", "Can I try this on?", "Do you have a smaller size?"],
+    sightseeing: ["How do we get there?", "Is it worth visiting?", "Can you take a photo?"],
+    social: ["Where are you from?", "What do you do?", "How long have you been here?"],
+  };
+  const specific = scenarioId ? scenarioReplies[scenarioId] ?? [] : [];
+  return [...specific.slice(0, 2), ...common.slice(0, 2)];
 }

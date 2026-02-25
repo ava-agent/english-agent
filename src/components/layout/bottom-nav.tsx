@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const navItems = [
-  { href: "/learn", label: "学习", icon: BookIcon },
   { href: "/chat", label: "聊天", icon: ChatIcon },
+  { href: "/learn", label: "学习", icon: BookIcon },
   { href: "/dashboard", label: "面板", icon: ChartIcon },
   { href: "/vocabulary", label: "词汇", icon: ListIcon },
   { href: "/settings", label: "设置", icon: SettingsIcon },

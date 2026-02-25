@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "English Learning Assistant",
     short_name: "EnglishAI",
     description: "AI 驱动的英语学习助手 - 旅游英语 & 软件工程英语",
-    start_url: "/learn",
+    start_url: "/chat",
     display: "standalone",
     background_color: "#09090b",
     theme_color: "#09090b",

@@ -50,7 +50,7 @@ function LoginForm() {
       if (error) {
         setError(error.message);
       } else {
-        router.push("/learn");
+        router.push("/chat");
         router.refresh();
       }
     }

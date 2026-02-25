@@ -19,3 +19,8 @@ export const testNotificationSchema = z.object({
     sendkey: z.string().max(100).optional(),
   }),
 });
+
+export const chatMessageSchema = z.object({
+  conversationId: z.string().uuid(),
+  message: z.string().min(1).max(500),
+});

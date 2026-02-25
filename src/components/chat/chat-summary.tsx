@@ -86,7 +86,7 @@ export function ChatSummary({
             <Link href="/chat">返回列表</Link>
           </Button>
           <Button className="flex-1" asChild>
-            <Link href="/chat">开始新对话</Link>
+            <Link href="/chat?new=1">开始新对话</Link>
           </Button>
         </div>
       </div>

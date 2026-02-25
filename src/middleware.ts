@@ -51,14 +51,14 @@ export async function middleware(request: NextRequest) {
   // Redirect logged-in users away from login page
   if (user && request.nextUrl.pathname === "/login") {
     const url = request.nextUrl.clone();
-    url.pathname = "/learn";
+    url.pathname = "/chat";
     return NextResponse.redirect(url);
   }
 
-  // Redirect root to /learn if authenticated
+  // Redirect root to /chat if authenticated
   if (user && request.nextUrl.pathname === "/") {
     const url = request.nextUrl.clone();
-    url.pathname = "/learn";
+    url.pathname = "/chat";
     return NextResponse.redirect(url);
   }
 

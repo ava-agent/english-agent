@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildSystemPrompt, streamChatResponse } from "@/lib/chat-ai";
+import { chatMessageSchema } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -12,11 +13,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { conversationId, message } = await request.json();
+  const body = await request.json();
+  const parsed = chatMessageSchema.safeParse(body);
 
-  if (!conversationId || !message || typeof message !== "string") {
+  if (!parsed.success) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
+
+  const { conversationId, message } = parsed.data;
 
   // Get conversation
   const { data: conversation } = await supabase
@@ -108,8 +112,11 @@ export async function POST(request: NextRequest) {
     }
   };
 
-  // Fire and forget the save operation
-  saveResponse();
+  // Fire and forget with timeout safeguard
+  const timeout = new Promise<void>((resolve) => setTimeout(resolve, 30_000));
+  Promise.race([saveResponse(), timeout]).catch((err) =>
+    console.error("Save response failed:", err)
+  );
 
   return new Response(clientStream, {
     headers: {

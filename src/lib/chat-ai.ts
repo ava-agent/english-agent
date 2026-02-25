@@ -50,8 +50,8 @@ YOUR ROLE:
 - Suggested vocabulary to naturally work in: ${scn.suggestedTopics.join(", ")}
 
 IMPORTANT FORMATTING:
-- Bold (**word**) any vocabulary worth learning
-- Include Chinese hints in parentheses for harder words
+- Bold (**word**) any vocabulary worth learning — ONLY English words/phrases inside bold markers, NEVER Chinese characters
+- Include Chinese hints in parentheses OUTSIDE bold markers, like: **concierge** (礼宾员)
 - Keep messages short and natural (like texting a friend)
 - Use casual punctuation and occasional emoji to feel friendly`;
 }
@@ -166,12 +166,16 @@ export async function extractVocabulary(
     .map((m) => m.content)
     .join("\n");
 
-  // Extract **bolded** words from assistant messages
+  // Extract **bolded** words from assistant messages (English only)
   const boldPattern = /\*\*([^*]+)\*\*/g;
   const words = new Set<string>();
   let match;
   while ((match = boldPattern.exec(assistantMessages)) !== null) {
-    words.add(match[1].toLowerCase().trim());
+    const word = match[1].trim();
+    // Only keep entries that contain English letters
+    if (/[a-zA-Z]/.test(word)) {
+      words.add(word.toLowerCase());
+    }
   }
 
   if (words.size === 0) return [];

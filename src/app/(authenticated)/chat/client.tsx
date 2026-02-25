@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +22,9 @@ interface ChatPageClientProps {
 
 export function ChatPageClient({ initialConversations }: ChatPageClientProps) {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("destination");
+  const searchParams = useSearchParams();
+  const isNewConversation = searchParams.get("new") === "1";
+  const [step, setStep] = useState<Step>(isNewConversation ? "destination" : "destination");
   const [selectedDest, setSelectedDest] = useState<Destination | null>(null);
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [loading, setLoading] = useState(false);
@@ -79,7 +81,7 @@ export function ChatPageClient({ initialConversations }: ChatPageClientProps) {
   return (
     <div className="flex flex-col gap-4 pb-24">
       {/* Active conversations */}
-      {activeConversations.length > 0 && step === "destination" && (
+      {activeConversations.length > 0 && step === "destination" && !isNewConversation && (
         <div className="rounded-xl border bg-card p-4">
           <h2 className="mb-3 text-sm font-medium text-muted-foreground">
             进行中的对话
