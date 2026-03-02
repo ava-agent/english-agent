@@ -42,7 +42,16 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/review") ||
     request.nextUrl.pathname.startsWith("/settings");
 
+  // Check for guest mode
+  const guestModeCookie = request.cookies.get("guestMode");
+  const isGuestMode = guestModeCookie?.value === "true";
+
+  // Allow chat access for guest users
   if (!user && isProtectedRoute) {
+    // Guest mode only allows /chat routes
+    if (isGuestMode && request.nextUrl.pathname.startsWith("/chat")) {
+      return supabaseResponse;
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

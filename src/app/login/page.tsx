@@ -104,6 +104,25 @@ function LoginForm() {
             >
               {isSignUp ? "已有账户？去登录" : "没有账户？去注册"}
             </button>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">或者</span>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => {
+                document.cookie = "guestMode=true; path=/; max-age=604800";
+                router.push("/chat");
+              }}
+            >
+              免费试用，无需注册
+            </Button>
           </form>
         </CardContent>
       </Card>

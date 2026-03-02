@@ -5,7 +5,7 @@ export interface NotificationPayload {
   url?: string;
 }
 
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://english-agent.vercel.app";
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://english.rxcloud.group";
 
 export function buildDailyReminderPayload(stats?: {
   streak: number;

@@ -2,7 +2,7 @@
 
 AI 驱动的英语学习助手，以**情景对话**为核心，通过模拟真实旅行场景与 AI 角色聊天，在自然交流中学习英语。
 
-**在线体验:** [https://english-agent.vercel.app](https://english-agent.vercel.app)
+**在线体验:** [https://english.rxcloud.group](https://english.rxcloud.group)
 
 ---
 
