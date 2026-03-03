@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { generateGreeting, extractVocabulary } from "@/lib/chat-ai";
 import { createUserCard } from "@/app/actions/review";
@@ -10,21 +11,46 @@ import type {
   VocabularyHighlight,
 } from "@/types/database";
 
+// Guest user ID for trial mode
+export const GUEST_USER_ID = "00000000-0000-0000-0000-000000000001";
+
+// Check if user is in guest mode
+async function isGuestMode(): Promise<boolean> {
+  const cookieStore = await cookies();
+  const guestCookie = cookieStore.get("guestMode");
+  return guestCookie?.value === "true";
+}
+
+// Get user ID (authenticated or guest)
+async function getUserId(): Promise<string | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) return user.id;
+
+  // Check for guest mode
+  if (await isGuestMode()) {
+    return GUEST_USER_ID;
+  }
+
+  return null;
+}
+
 // ============================================
 // Get user's conversations
 // ============================================
 
 export async function getConversations(): Promise<ChatConversation[]> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return [];
+  const userId = await getUserId();
+  if (!userId) return [];
 
+  const supabase = await createClient();
   const { data } = await supabase
     .from("chat_conversations")
     .select("*")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -40,11 +66,10 @@ export async function startConversation(
   destination: string,
   scenario: string
 ): Promise<{ success: boolean; conversation?: ChatConversation; error?: string }> {
+  const userId = await getUserId();
+  if (!userId) return { success: false, error: "未登录" };
+
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
 
   // Generate AI greeting
   const greeting = await generateGreeting(characterId, destination, scenario);
@@ -53,7 +78,7 @@ export async function startConversation(
   const { data: conversation, error: convError } = await supabase
     .from("chat_conversations")
     .insert({
-      user_id: user.id,
+      user_id: userId,
       character_id: characterId,
       destination,
       scenario,
@@ -118,18 +143,17 @@ export async function getConversationMessages(
 // End conversation & extract vocabulary
 // ============================================
 
-export async function endConversation(
+ export async function endConversation(
   conversationId: string
 ): Promise<{
   success: boolean;
   vocabulary?: VocabularyHighlight[];
   error?: string;
 }> {
+  const userId = await getUserId();
+  if (!userId) return { success: false, error: "未登录" };
+
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "未登录" };
 
   // Get all messages
   const { data: messages } = await supabase
@@ -139,7 +163,7 @@ export async function endConversation(
     .order("created_at", { ascending: true });
 
   if (!messages || messages.length === 0) {
-    return { success: false, error: "No messages found" };
+    return { success: false, error: "暂无消息" };
   }
 
   // Extract vocabulary from conversation
@@ -158,10 +182,35 @@ export async function endConversation(
       )
     : 0;
 
-  // Update conversation
+  // Update conversation status
   await supabase
     .from("chat_conversations")
     .update({
+      status: "completed",
+      ended_at: new Date().toISOString(),
+      duration_seconds,
+    })
+    .eq("id", conversationId)
+    .eq("user_id", userId);
+
+  // Save vocabulary cards for user (skip for guest mode)
+  if (userId !== GUEST_USER_ID) {
+    for (const word of vocabulary) {
+      await createUserCard(
+        word.word,
+        word.definition_zh || null,
+        "travel",
+        Rating.Good,
+        "chat"
+      );
+    }
+  }
+
+  return {
+    success: true,
+    vocabulary,
+  };
+}
       status: "completed",
       vocabulary_learned: vocabulary,
       message_count: messages.length,

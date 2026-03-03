@@ -1,0 +1,2 @@
+[    4081ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://english-agent.vercel.app/icon-192x192.png:0
+[    4081ms] [WARNING] Error while trying to use the following icon from the Manifest: https://english-agent.vercel.app/icon-192x192.png (Download error or resource isn't a valid image) @ https://english-agent.vercel.app/:0
