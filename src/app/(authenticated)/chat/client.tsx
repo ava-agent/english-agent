@@ -196,12 +196,12 @@ export function ChatPageClient({ initialConversations }: ChatPageClientProps) {
                 onClick={() => handleSelectCharacter(character)}
               >
                 <span className="text-3xl">{character.avatar}</span>
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{character.name}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground line-clamp-2">
                     {character.personality}
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground/70">
+                  <p className="mt-1 text-xs text-muted-foreground/70 line-clamp-2">
                     {character.background}
                   </p>
                 </div>

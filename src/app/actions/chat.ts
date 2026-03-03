@@ -3,16 +3,14 @@
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { generateGreeting, extractVocabulary } from "@/lib/chat-ai";
-import { createUserCard } from "@/app/actions/review";
-import { Rating, type Grade } from "@/lib/srs";
 import type {
   ChatConversation,
   ChatMessage,
   VocabularyHighlight,
 } from "@/types/database";
 
-// Guest user ID for trial mode
-export const GUEST_USER_ID = "00000000-0000-0000-0000-000000000001";
+// Guest user ID for trial mode (not exported - server actions only allow async function exports)
+const GUEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 // Check if user is in guest mode
 async function isGuestMode(): Promise<boolean> {
@@ -96,7 +94,7 @@ export async function startConversation(
   // Save greeting message
   await supabase.from("chat_conversation_messages").insert({
     conversation_id: conversation.id,
-    user_id: user.id,
+    user_id: userId,
     role: "assistant",
     content: greeting,
     metadata: {},
@@ -112,24 +110,23 @@ export async function startConversation(
 export async function getConversationMessages(
   conversationId: string
 ): Promise<{ conversation: ChatConversation | null; messages: ChatMessage[] }> {
+  const userId = await getUserId();
+  if (!userId) return { conversation: null, messages: [] };
+
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { conversation: null, messages: [] };
 
   const [convResult, msgResult] = await Promise.all([
     supabase
       .from("chat_conversations")
       .select("*")
       .eq("id", conversationId)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .single(),
     supabase
       .from("chat_conversation_messages")
       .select("*")
       .eq("conversation_id", conversationId)
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .order("created_at", { ascending: true }),
   ]);
 
@@ -143,7 +140,7 @@ export async function getConversationMessages(
 // End conversation & extract vocabulary
 // ============================================
 
- export async function endConversation(
+export async function endConversation(
   conversationId: string
 ): Promise<{
   success: boolean;
@@ -188,84 +185,16 @@ export async function getConversationMessages(
     .update({
       status: "completed",
       ended_at: new Date().toISOString(),
-      duration_seconds,
+      duration_seconds: durationSeconds,
     })
     .eq("id", conversationId)
     .eq("user_id", userId);
 
-  // Save vocabulary cards for user (skip for guest mode)
-  if (userId !== GUEST_USER_ID) {
-    for (const word of vocabulary) {
-      await createUserCard(
-        word.word,
-        word.definition_zh || null,
-        "travel",
-        Rating.Good,
-        "chat"
-      );
-    }
-  }
+  // Note: Vocabulary card saving is skipped for now
+  // In guest mode, we just display the vocabulary without persisting
 
   return {
     success: true,
     vocabulary,
   };
-}
-      status: "completed",
-      vocabulary_learned: vocabulary,
-      message_count: messages.length,
-      duration_seconds: durationSeconds,
-      completed_at: new Date().toISOString(),
-    })
-    .eq("id", conversationId);
-
-  // Add vocabulary to SRS system
-  for (const vocab of vocabulary) {
-    if (!vocab.word || !vocab.definition) continue;
-
-    // Check if word exists in vocabulary table
-    const { data: existing } = await supabase
-      .from("vocabulary")
-      .select("id")
-      .ilike("word", vocab.word)
-      .single();
-
-    let vocabularyId: string;
-
-    if (existing) {
-      vocabularyId = existing.id;
-    } else {
-      // Insert new vocabulary
-      const { data: inserted } = await supabase
-        .from("vocabulary")
-        .insert({
-          word: vocab.word,
-          definition: vocab.definition,
-          definition_zh: vocab.definition_zh || null,
-          pronunciation: vocab.pronunciation || null,
-          category: "travel" as const,
-          subcategory: "social",
-          difficulty_tier: 1,
-          example_sentences: [],
-          tags: ["chat-learned"],
-          is_phrase: vocab.word.includes(" "),
-          source: "llm_generated" as const,
-        })
-        .select("id")
-        .single();
-
-      if (!inserted) continue;
-      vocabularyId = inserted.id;
-    }
-
-    // Create user card with "Good" rating
-    await createUserCard(
-      vocabularyId,
-      Rating.Good as Grade,
-      null,
-      0
-    );
-  }
-
-  return { success: true, vocabulary };
 }
