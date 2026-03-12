@@ -1,9 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { buildSystemPrompt, streamChatResponse } from "@/lib/chat-ai";
 import { chatMessageSchema } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const parsed = chatMessageSchema.safeParse(body);
+
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  const { conversationId, message, guest, characterId, destination, scenario, history } = parsed.data;
+
+  // Guest mode: skip all DB operations
+  if (guest && characterId && destination && scenario) {
+    // Verify guest cookie
+    const cookieStore = await cookies();
+    const guestCookie = cookieStore.get("guestMode");
+    if (guestCookie?.value !== "true") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const systemPrompt = buildSystemPrompt(characterId, destination, scenario);
+
+    const messageHistory = (history ?? []).map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
+
+    const stream = await streamChatResponse(
+      systemPrompt,
+      messageHistory,
+      message.trim()
+    );
+
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Cache-Control": "no-cache",
+      },
+    });
+  }
+
+  // Authenticated mode: use DB
   const supabase = await createClient();
   const {
     data: { user },
@@ -12,15 +54,6 @@ export async function POST(request: NextRequest) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const body = await request.json();
-  const parsed = chatMessageSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  }
-
-  const { conversationId, message } = parsed.data;
 
   // Get conversation
   const { data: conversation } = await supabase
@@ -48,14 +81,14 @@ export async function POST(request: NextRequest) {
   });
 
   // Get recent message history (last 20 for context)
-  const { data: history } = await supabase
+  const { data: dbHistory } = await supabase
     .from("chat_conversation_messages")
     .select("role, content")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true })
     .limit(20);
 
-  const messageHistory = (history ?? [])
+  const messageHistory = (dbHistory ?? [])
     .filter((m: { role: string }) => m.role !== "system")
     .map((m: { role: string; content: string }) => ({
       role: m.role as "user" | "assistant",

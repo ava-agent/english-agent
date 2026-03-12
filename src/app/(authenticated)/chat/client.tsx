@@ -57,7 +57,17 @@ export function ChatPageClient({ initialConversations }: ChatPageClientProps) {
     );
 
     if (result.success && result.conversation) {
-      router.push(`/chat/${result.conversation.id}`);
+      const conv = result.conversation;
+
+      // Guest conversations (id starts with "guest-") are stored in sessionStorage
+      if (conv.id.startsWith("guest-")) {
+        sessionStorage.setItem(
+          `guest-conv-${conv.id}`,
+          JSON.stringify(conv)
+        );
+      }
+
+      router.push(`/chat/${conv.id}`);
     } else {
       setError(result.error ?? "创建对话失败");
       setLoading(false);

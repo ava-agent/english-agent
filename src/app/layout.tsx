@@ -23,11 +23,13 @@ export const metadata: Metadata = {
     description: "AI 驱动的英语学习助手 - 旅游英语 & 软件工程英语",
     siteName: "EnglishAI",
     locale: "zh_CN",
+    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "English Learning Assistant",
     description: "AI 驱动的英语学习助手 - 旅游英语 & 软件工程英语",
+    images: ["/og-image.png"],
   },
 };
 

@@ -78,9 +78,10 @@ export interface ChatConversation {
   status: "active" | "completed";
   vocabulary_learned: VocabularyHighlight[];
   message_count: number;
-  duration_seconds: number;
+  duration_seconds: number | null;
   created_at: string;
-  completed_at: string | null;
+  ended_at: string | null;
+  greeting?: string;
 }
 
 export interface ChatMessage {

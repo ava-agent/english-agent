@@ -156,7 +156,7 @@ export function SessionContainer({ session }: SessionContainerProps) {
 
   // Handle practice completion
   const handlePracticeComplete = useCallback(
-    async (_: boolean) => {
+    async () => {
       await advanceToNext(false, false);
     },
     [advanceToNext]

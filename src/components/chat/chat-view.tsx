@@ -17,9 +17,10 @@ import type {
 interface ChatViewProps {
   conversation: ChatConversation;
   initialMessages: ChatMessage[];
+  isGuest?: boolean;
 }
 
-export function ChatView({ conversation, initialMessages }: ChatViewProps) {
+export function ChatView({ conversation, initialMessages, isGuest }: ChatViewProps) {
   const router = useRouter();
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
   const [input, setInput] = useState("");
@@ -65,13 +66,27 @@ export function ChatView({ conversation, initialMessages }: ChatViewProps) {
     setMessages((prev) => [...prev, userMsg]);
 
     try {
+      const requestBody: Record<string, unknown> = {
+        conversationId: conversation.id,
+        message: text,
+      };
+
+      // Guest mode: send conversation metadata and history since there's no DB
+      if (isGuest) {
+        requestBody.guest = true;
+        requestBody.characterId = conversation.character_id;
+        requestBody.destination = conversation.destination;
+        requestBody.scenario = conversation.scenario;
+        requestBody.history = [...messages, userMsg].map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
+      }
+
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          conversationId: conversation.id,
-          message: text,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!res.ok || !res.body) {
@@ -124,7 +139,11 @@ export function ChatView({ conversation, initialMessages }: ChatViewProps) {
 
   const handleEndConversation = async () => {
     setIsEnding(true);
-    const result = await endConversation(conversation.id);
+    // Guest mode: pass client messages since there's no DB
+    const result = await endConversation(
+      conversation.id,
+      isGuest ? messages : undefined
+    );
     if (result.success) {
       setSummary(result.vocabulary ?? []);
     }

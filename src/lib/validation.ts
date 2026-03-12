@@ -21,6 +21,19 @@ export const testNotificationSchema = z.object({
 });
 
 export const chatMessageSchema = z.object({
-  conversationId: z.string().uuid(),
+  conversationId: z.string().min(1).max(100),
   message: z.string().min(1).max(500),
+  // Guest mode fields
+  guest: z.boolean().optional(),
+  characterId: z.string().max(50).optional(),
+  destination: z.string().max(50).optional(),
+  scenario: z.string().max(50).optional(),
+  history: z
+    .array(
+      z.object({
+        role: z.enum(["user", "assistant"]),
+        content: z.string(),
+      })
+    )
+    .optional(),
 });

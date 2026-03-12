@@ -9,7 +9,7 @@ import type {
   VocabularyHighlight,
 } from "@/types/database";
 
-// Guest user ID for trial mode (not exported - server actions only allow async function exports)
+// Guest user ID for trial mode
 const GUEST_USER_ID = "00000000-0000-0000-0000-000000000001";
 
 // Check if user is in guest mode
@@ -19,20 +19,20 @@ async function isGuestMode(): Promise<boolean> {
   return guestCookie?.value === "true";
 }
 
-// Get user ID (authenticated or guest)
-async function getUserId(): Promise<string | null> {
+// Get authenticated user ID (null for guests)
+async function getAuthUserId(): Promise<string | null> {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  return user?.id ?? null;
+}
 
-  if (user) return user.id;
-
-  // Check for guest mode
-  if (await isGuestMode()) {
-    return GUEST_USER_ID;
-  }
-
+// Get user ID (authenticated or guest)
+async function getUserId(): Promise<string | null> {
+  const authId = await getAuthUserId();
+  if (authId) return authId;
+  if (await isGuestMode()) return GUEST_USER_ID;
   return null;
 }
 
@@ -41,14 +41,14 @@ async function getUserId(): Promise<string | null> {
 // ============================================
 
 export async function getConversations(): Promise<ChatConversation[]> {
-  const userId = await getUserId();
-  if (!userId) return [];
+  const authId = await getAuthUserId();
+  if (!authId) return []; // Guests don't have persisted conversations
 
   const supabase = await createClient();
   const { data } = await supabase
     .from("chat_conversations")
     .select("*")
-    .eq("user_id", userId)
+    .eq("user_id", authId)
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -67,12 +67,33 @@ export async function startConversation(
   const userId = await getUserId();
   if (!userId) return { success: false, error: "未登录" };
 
-  const supabase = await createClient();
+  const isGuest = userId === GUEST_USER_ID;
 
   // Generate AI greeting
   const greeting = await generateGreeting(characterId, destination, scenario);
 
-  // Create conversation
+  // Guest mode: return mock conversation without DB
+  if (isGuest) {
+    const mockConversation: ChatConversation = {
+      id: `guest-${crypto.randomUUID()}`,
+      user_id: GUEST_USER_ID,
+      character_id: characterId,
+      destination,
+      scenario,
+      status: "active",
+      vocabulary_learned: [],
+      message_count: 1,
+      created_at: new Date().toISOString(),
+      ended_at: null,
+      duration_seconds: null,
+      greeting,
+    };
+    return { success: true, conversation: mockConversation };
+  }
+
+  // Authenticated user: persist to DB
+  const supabase = await createClient();
+
   const { data: conversation, error: convError } = await supabase
     .from("chat_conversations")
     .insert({
@@ -110,8 +131,8 @@ export async function startConversation(
 export async function getConversationMessages(
   conversationId: string
 ): Promise<{ conversation: ChatConversation | null; messages: ChatMessage[] }> {
-  const userId = await getUserId();
-  if (!userId) return { conversation: null, messages: [] };
+  const authId = await getAuthUserId();
+  if (!authId) return { conversation: null, messages: [] };
 
   const supabase = await createClient();
 
@@ -120,13 +141,13 @@ export async function getConversationMessages(
       .from("chat_conversations")
       .select("*")
       .eq("id", conversationId)
-      .eq("user_id", userId)
+      .eq("user_id", authId)
       .single(),
     supabase
       .from("chat_conversation_messages")
       .select("*")
       .eq("conversation_id", conversationId)
-      .eq("user_id", userId)
+      .eq("user_id", authId)
       .order("created_at", { ascending: true }),
   ]);
 
@@ -141,7 +162,8 @@ export async function getConversationMessages(
 // ============================================
 
 export async function endConversation(
-  conversationId: string
+  conversationId: string,
+  clientMessages?: ChatMessage[]
 ): Promise<{
   success: boolean;
   vocabulary?: VocabularyHighlight[];
@@ -150,9 +172,20 @@ export async function endConversation(
   const userId = await getUserId();
   if (!userId) return { success: false, error: "未登录" };
 
+  const isGuest = userId === GUEST_USER_ID;
+
+  // For guests, use client-provided messages
+  if (isGuest) {
+    if (!clientMessages || clientMessages.length === 0) {
+      return { success: false, error: "暂无消息" };
+    }
+    const vocabulary = await extractVocabulary(clientMessages);
+    return { success: true, vocabulary };
+  }
+
+  // Authenticated user: read from DB
   const supabase = await createClient();
 
-  // Get all messages
   const { data: messages } = await supabase
     .from("chat_conversation_messages")
     .select("*")
@@ -163,10 +196,8 @@ export async function endConversation(
     return { success: false, error: "暂无消息" };
   }
 
-  // Extract vocabulary from conversation
   const vocabulary = await extractVocabulary(messages as ChatMessage[]);
 
-  // Get conversation start time for duration
   const { data: conversation } = await supabase
     .from("chat_conversations")
     .select("created_at")
@@ -179,7 +210,6 @@ export async function endConversation(
       )
     : 0;
 
-  // Update conversation status
   await supabase
     .from("chat_conversations")
     .update({
@@ -190,11 +220,5 @@ export async function endConversation(
     .eq("id", conversationId)
     .eq("user_id", userId);
 
-  // Note: Vocabulary card saving is skipped for now
-  // In guest mode, we just display the vocabulary without persisting
-
-  return {
-    success: true,
-    vocabulary,
-  };
+  return { success: true, vocabulary };
 }

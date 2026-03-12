@@ -66,6 +66,10 @@ AI 驱动的英语学习助手，以**情景对话**为核心，通过模拟真�
 
 ---
 
+## 系统架构
+
+![系统架构](docs/diagrams/01-system-architecture.png)
+
 ## 技术栈
 
 | 层级 | 技术 |
@@ -125,6 +129,8 @@ src/
 ---
 
 ## 数据库
+
+![数据库 ER 图](docs/diagrams/04-database-schema.png)
 
 8 张表，全部启用 Row-Level Security:
 
@@ -220,27 +226,14 @@ npx vercel --prod
 
 ## 对话系统架构
 
-```
-用户选择 目的地 → 场景 → 角色
-         ↓
-  startConversation()
-  → 检查登录状态 (支持访客模式)
-  → 创建 chat_conversations 记录
-  → generateGreeting() 生成 AI 开场白
-         ↓
-  用户发送消息 → POST /api/chat
-  → Zod 校验输入
-  → 保存用户消息到 DB
-  → buildSystemPrompt() 构建角色提示词
-  → streamChatResponse() 流式生成回复
-  → stream.tee() 分流: 客户端展示 + DB 保存
-         ↓
-  用户结束对话 → endConversation()
-  → extractVocabulary() 提取 **粗体** 词汇
-  → LLM 生成定义和翻译
-  → 注册用户: 词汇入库 + 创建 SRS 卡片
-  → 访客用户: 仅展示词汇，不持久化
-```
+![对话流程](docs/diagrams/02-chat-flow.png)
+
+**流程说明:**
+
+1. **选择阶段** - 用户依次选择目的地 (8 城市) → 场景 (6 种) → AI 角色 (3 位)
+2. **创建对话** - 检查登录状态，创建 `chat_conversations` 记录，AI 生成角色化开场白
+3. **对话循环** - 用户发消息 → Zod 校验 → 构建角色提示词 → 流式生成 AI 回复 → 双写 (客户端展示 + DB 保存)
+4. **结束总结** - 提取 `**粗体**` 标记的词汇 → LLM 生成定义和翻译 → 注册用户入库 SRS / 访客仅展示
 
 ### 访客模式
 
@@ -248,6 +241,24 @@ npx vercel --prod
 - 访客可完整体验对话功能，但数据不会持久化
 - 对话结束后词汇仅展示，不进入 SRS 复习系统
 - 注册登录后可保存学习进度
+
+---
+
+## SRS 间隔重复系统
+
+![SRS 流程](docs/diagrams/03-srs-flow.png)
+
+基于 [FSRS](https://github.com/open-spaced-repetition/ts-fsrs) 算法，词汇经历 5 个掌握状态:
+
+| 状态 | 说明 |
+|---|---|
+| New | 从对话中提取的新词，尚未复习 |
+| Learning | 初次复习，短间隔重复 |
+| Familiar | 多次正确回忆，间隔逐渐延长 |
+| Mastered | 稳定性 > 30 天，长期记忆 |
+| Relearning | 遗忘后重新学习 |
+
+用户每次复习后选择 Again / Hard / Good / Easy，算法自动计算下次复习时间。
 
 ---
 
