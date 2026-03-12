@@ -244,6 +244,47 @@ npx vercel --prod
 
 ---
 
+## AI Agent 架构
+
+![AI Agent 架构](docs/diagrams/05-ai-agent-architecture.png)
+
+系统采用**多 Agent 协作架构**，4 个专用 Agent 各司其职，通过共享数据结构协同工作:
+
+| Agent | 职责 | 核心函数 | 文件 |
+|---|---|---|---|
+| **Chat Agent** | 实时角色对话，流式响应 | `buildSystemPrompt()`, `streamChatResponse()` | `chat-ai.ts` |
+| **Vocabulary Extraction Agent** | 从对话中提取词汇并生成释义 | `extractVocabulary()` | `chat-ai.ts` |
+| **Session Builder Agent** | 编排每日学习计划 | `buildSessionPlan()`, `interleaveItems()` | `session-builder.ts` |
+| **FSRS Agent** | 间隔重复调度 | `reviewCard()`, `getMasteryLevel()` | `srs.ts` |
+
+### Agent 执行流程
+
+![Agent 执行流程](docs/diagrams/06-agent-execution-flow.png)
+
+**三条核心流水线:**
+
+1. **对话流** - 用户选择场景 → 构建角色提示词 (16 条行为规则) → GLM-4 流式生成 → `stream.tee()` 双写 (实时展示 + 后台存库)
+2. **词汇提取流** - 对话结束 → Regex 提取 `**粗体**` 词汇 → LLM 生成释义+翻译 → Zod 校验 → 注册用户入库 SRS / 访客仅展示
+3. **学习会话流** - `buildReviewQueue()` 复习队列 + `selectNewVocabulary()` 新词选取 + `generatePracticeItems()` 练习生成 → 交错编排 (2R+3L+1P)
+
+### LLM 提示工程与数据管道
+
+![LLM 提示工程](docs/diagrams/07-llm-prompt-pipeline.png)
+
+所有 AI 能力统一由 **GLM-4 Plus (智谱 AI)** 驱动，通过 OpenAI 兼容 SDK 调用。不同任务使用不同的 Temperature 策略:
+
+| LLM 调用 | Temperature | 响应格式 | 校验 | 用途 |
+|---|:---:|---|---|---|
+| 对话流式 | 0.85 | Text stream | — | 角色实时聊天 |
+| 开场白生成 | 0.9 | Text | 降级兜底 | 创建对话时的角色化问候 |
+| 词汇释义 | 0.3 | JSON | Zod | 对话结束后提取词汇定义 |
+| 语料生成 | 0.8 | JSON | Strict Zod (7 字段) | 每日学习新词 + 例句 + 对话 |
+| 练习生成 | 0.7 | JSON | Strict Zod | 填空题 + 4 选项 |
+
+> **设计原则:** 创意任务 (对话、开场白) 使用高 Temperature，事实性任务 (释义、练习) 使用低 Temperature，确保输出既生动又准确。
+
+---
+
 ## SRS 间隔重复系统
 
 ![SRS 流程](docs/diagrams/03-srs-flow.png)
