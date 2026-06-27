@@ -1,17 +1,11 @@
-import OpenAI from "openai";
+import type OpenAI from "openai";
 import {
   getCharacter,
   getDestination,
   getScenario,
 } from "./chat-constants";
 import type { ChatMessage, VocabularyHighlight } from "@/types/database";
-
-const LLM_MODEL = process.env.LLM_MODEL ?? "glm-4-plus";
-
-const client = new OpenAI({
-  apiKey: process.env.ZHIPU_API_KEY ?? "",
-  baseURL: process.env.ZHIPU_BASE_URL ?? "https://open.bigmodel.cn/api/paas/v4",
-});
+import { ARK_CHAT_MODEL, createArkClient, parseJsonFromModel } from "@/lib/ark";
 
 // ============================================
 // System Prompt Builder
@@ -97,8 +91,8 @@ export async function streamChatResponse(
     { role: "user", content: userMessage },
   ];
 
-  const response = await client.chat.completions.create({
-    model: LLM_MODEL,
+  const response = await createArkClient().chat.completions.create({
+    model: ARK_CHAT_MODEL,
     messages: chatMessages,
     temperature: 0.85,
     stream: true,
@@ -137,8 +131,8 @@ export async function generateGreeting(
   const greetingPrompt = buildGreetingPrompt(characterId, destination, scenario);
 
   try {
-    const response = await client.chat.completions.create({
-      model: LLM_MODEL,
+    const response = await createArkClient().chat.completions.create({
+      model: ARK_CHAT_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: greetingPrompt },
@@ -184,9 +178,13 @@ export async function extractVocabulary(
   const wordList = [...words].join(", ");
 
   try {
-    const response = await client.chat.completions.create({
-      model: LLM_MODEL,
+    const response = await createArkClient().chat.completions.create({
+      model: ARK_CHAT_MODEL,
       messages: [
+        {
+          role: "system",
+          content: "Return only valid JSON. Do not wrap the response in markdown.",
+        },
         {
           role: "user",
           content: `Provide brief definitions for these English words/phrases. Return ONLY valid JSON array:
@@ -197,20 +195,29 @@ Format:
         },
       ],
       temperature: 0.3,
-      response_format: { type: "json_object" },
     });
 
     const content = response.choices[0]?.message?.content;
     if (!content) return [];
 
-    const parsed = JSON.parse(content);
-    const items = Array.isArray(parsed) ? parsed : parsed.words ?? parsed.vocabulary ?? [];
-    return items.map((item: Record<string, string>) => ({
-      word: item.word ?? "",
-      definition: item.definition ?? "",
-      definition_zh: item.definition_zh ?? "",
-      pronunciation: item.pronunciation,
-    }));
+    const parsed = parseJsonFromModel(content);
+    const itemSource = Array.isArray(parsed)
+      ? parsed
+      : parsed && typeof parsed === "object"
+        ? ((parsed as { vocabulary?: unknown; words?: unknown }).words ??
+          (parsed as { vocabulary?: unknown; words?: unknown }).vocabulary)
+        : [];
+    const items = Array.isArray(itemSource) ? itemSource : [];
+
+    return items.map((item) => {
+      const record = item as Record<string, string>;
+      return {
+        word: record.word ?? "",
+        definition: record.definition ?? "",
+        definition_zh: record.definition_zh ?? "",
+        pronunciation: record.pronunciation,
+      };
+    });
   } catch (error) {
     console.error("Failed to extract vocabulary:", error);
     // Fallback: return words without definitions

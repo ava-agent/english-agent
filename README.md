@@ -46,7 +46,7 @@ AI 驱动的英语学习助手，以**情景对话**为核心，通过模拟真�
 ### 每日学习
 - **个性化学习计划** - 结合复习卡片、新词汇和练习题
 - **FSRS 间隔重复** - 基于 `ts-fsrs`，科学安排复习时间 (Again / Hard / Good / Easy)
-- **AI 内容生成** - GLM-4 生成例句、情景对话和填空练习
+- **AI 内容生成** - 火山引擎 Ark 生成例句、情景对话和填空练习
 - **双主题** - 旅游英语 + 软件工程英语
 
 ### 数据分析
@@ -79,7 +79,7 @@ AI 驱动的英语学习助手，以**情景对话**为核心，通过模拟真�
 | UI | Tailwind CSS 4 + Radix UI + shadcn/ui |
 | 数据库 | PostgreSQL 17 (Supabase) + RLS 行级安全 |
 | 认证 | Supabase Auth (邮箱密码, PKCE 流程) |
-| AI | GLM-4 Plus (智谱 AI) via OpenAI 兼容 SDK |
+| AI | 火山引擎 Ark CodingPlan via OpenAI 兼容 SDK |
 | SRS | ts-fsrs v5.2 (间隔重复算法) |
 | 通知 | Telegram Bot API, Server 酱 API, Web Push |
 | GitHub | Octokit REST API |
@@ -118,7 +118,8 @@ src/
 │   ├── chat-ai.ts              # 对话 AI (系统提示词、流式响应、词汇提取)
 │   ├── chat-constants.ts       # 目的地、场景、角色定义
 │   ├── srs.ts                  # FSRS 算法封装
-│   ├── llm.ts                  # GLM-4 API 客户端
+│   ├── ark.ts                  # Ark API 客户端
+│   ├── llm.ts                  # AI 内容生成逻辑
 │   ├── validation.ts           # Zod 输入校验
 │   ├── github.ts               # GitHub 提交逻辑
 │   ├── notifications/          # 通知分发
@@ -156,7 +157,7 @@ src/
 
 - Node.js 18+
 - Supabase 项目 ([supabase.com](https://supabase.com))
-- 智谱 AI API 密钥 ([open.bigmodel.cn](https://open.bigmodel.cn))
+- 火山引擎 Ark API 密钥
 
 ### 安装
 
@@ -179,8 +180,9 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_URL` | 是 | Supabase 项目 URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 是 | Supabase 匿名密钥 |
 | `SUPABASE_SERVICE_ROLE_KEY` | 是 | Supabase 服务角色密钥 |
-| `ZHIPU_API_KEY` | 是 | 智谱 AI API 密钥 |
-| `ZHIPU_BASE_URL` | 是 | `https://open.bigmodel.cn/api/paas/v4` |
+| `ARK_API_KEY` | 是 | 火山引擎 Ark API 密钥 |
+| `ARK_BASE_URL` | 是 | `https://ark.cn-beijing.volces.com/api/coding/v3` |
+| `ARK_CHAT_MODEL` | 是 | `doubao-seed-2-0-code-preview-260215` |
 | `CRON_SECRET` | 是 | Vercel 定时任务鉴权密钥 |
 | `GITHUB_TOKEN` | 否 | GitHub PAT (报告发布) |
 | `GITHUB_REPO_OWNER` | 否 | GitHub 仓库所有者 |
@@ -263,7 +265,7 @@ npx vercel --prod
 
 **三条核心流水线:**
 
-1. **对话流** - 用户选择场景 → 构建角色提示词 (16 条行为规则) → GLM-4 流式生成 → `stream.tee()` 双写 (实时展示 + 后台存库)
+1. **对话流** - 用户选择场景 → 构建角色提示词 (16 条行为规则) → Ark 流式生成 → `stream.tee()` 双写 (实时展示 + 后台存库)
 2. **词汇提取流** - 对话结束 → Regex 提取 `**粗体**` 词汇 → LLM 生成释义+翻译 → Zod 校验 → 注册用户入库 SRS / 访客仅展示
 3. **学习会话流** - `buildReviewQueue()` 复习队列 + `selectNewVocabulary()` 新词选取 + `generatePracticeItems()` 练习生成 → 交错编排 (2R+3L+1P)
 
@@ -271,7 +273,7 @@ npx vercel --prod
 
 ![LLM 提示工程](docs/diagrams/07-llm-prompt-pipeline.png)
 
-所有 AI 能力统一由 **GLM-4 Plus (智谱 AI)** 驱动，通过 OpenAI 兼容 SDK 调用。不同任务使用不同的 Temperature 策略:
+所有 AI 能力统一由 **火山引擎 Ark CodingPlan** 驱动，通过 OpenAI 兼容 SDK 调用。不同任务使用不同的 Temperature 策略:
 
 | LLM 调用 | Temperature | 响应格式 | 校验 | 用途 |
 |---|:---:|---|---|---|
