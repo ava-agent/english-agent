@@ -5,7 +5,7 @@
 - GitHub: `ava-agent/english-agent`
 - Live site: `https://english.rxcloud.group`
 - Deployment: Vercel
-- Stack: Next.js 16, React 19, Tailwind CSS 4, Supabase, GLM/Zhipu API, ts-fsrs, Octokit, web-push
+- Stack: Next.js 16, React 19, Tailwind CSS 4, Supabase, Volcengine Ark CodingPlan API, ts-fsrs, Octokit, web-push
 
 ## Public Routes Checked
 
@@ -54,8 +54,9 @@
   - `NEXT_PUBLIC_SUPABASE_URL`
   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
   - `SUPABASE_SERVICE_ROLE_KEY`
-  - `ZHIPU_API_KEY`
-  - `ZHIPU_BASE_URL`
+  - `ARK_API_KEY`
+  - `ARK_BASE_URL`
+  - `ARK_CHAT_MODEL`
   - `CRON_SECRET`
   - `GITHUB_TOKEN`
   - `TELEGRAM_BOT_TOKEN`
@@ -67,5 +68,5 @@
 - `npm run test`: passed
 - `npm run build`: passed with the two Next.js warnings recorded above
 - `git diff --check`: passed
-- Common secret pattern scan: matched only environment variable reads for Zhipu, cron, Telegram, and GitHub tokens; no hardcoded production credential identified
+- Common secret pattern scan: matched only environment variable reads for Ark, cron, Telegram, and GitHub tokens; no hardcoded production credential identified
 - Global inventory refresh: completed; readiness is now 100
