@@ -5,7 +5,7 @@
 - GitHub: `ava-agent/english-agent`
 - Live site: `https://english.rxcloud.group`
 - Deployment: Vercel
-- Stack: Next.js 16, React 19, Tailwind CSS 4, Supabase, Volcengine Ark CodingPlan API, ts-fsrs, Octokit, web-push
+- Stack: Next.js 16, React 19, Tailwind CSS 4, Supabase, Volcengine Ark Agent Plan API, ts-fsrs, Octokit, web-push
 
 ## Public Routes Checked
 

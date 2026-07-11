@@ -79,7 +79,7 @@ AI 驱动的英语学习助手，以**情景对话**为核心，通过模拟真�
 | UI | Tailwind CSS 4 + Radix UI + shadcn/ui |
 | 数据库 | PostgreSQL 17 (Supabase) + RLS 行级安全 |
 | 认证 | Supabase Auth (邮箱密码, PKCE 流程) |
-| AI | 火山引擎 Ark CodingPlan via OpenAI 兼容 SDK |
+| AI | 火山引擎 Ark Agent Plan via OpenAI 兼容 SDK |
 | SRS | ts-fsrs v5.2 (间隔重复算法) |
 | 通知 | Telegram Bot API, Server 酱 API, Web Push |
 | GitHub | Octokit REST API |
@@ -181,7 +181,7 @@ cp .env.example .env.local
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 是 | Supabase 匿名密钥 |
 | `SUPABASE_SERVICE_ROLE_KEY` | 是 | Supabase 服务角色密钥 |
 | `ARK_API_KEY` | 是 | 火山引擎 Ark API 密钥 |
-| `ARK_BASE_URL` | 是 | `https://ark.cn-beijing.volces.com/api/coding/v3` |
+| `ARK_BASE_URL` | 是 | `https://ark.cn-beijing.volces.com/api/plan/v3` |
 | `ARK_CHAT_MODEL` | 是 | `doubao-seed-2-0-code-preview-260215` |
 | `CRON_SECRET` | 是 | Vercel 定时任务鉴权密钥 |
 | `GITHUB_TOKEN` | 否 | GitHub PAT (报告发布) |
@@ -273,7 +273,7 @@ npx vercel --prod
 
 ![LLM 提示工程](docs/diagrams/07-llm-prompt-pipeline.png)
 
-所有 AI 能力统一由 **火山引擎 Ark CodingPlan** 驱动，通过 OpenAI 兼容 SDK 调用。不同任务使用不同的 Temperature 策略:
+所有 AI 能力统一由 **火山引擎 Ark Agent Plan** 驱动，通过 OpenAI 兼容 SDK 调用。不同任务使用不同的 Temperature 策略:
 
 | LLM 调用 | Temperature | 响应格式 | 校验 | 用途 |
 |---|:---:|---|---|---|
